@@ -1,54 +1,57 @@
-// import { MemoryMessageQueue } from '../../src/queues/MemoryMessageQueue';
-// import { MessageQueueFixture } from './MessageQueueFixture';
+// import 'package:test/test.dart';
+// import 'package:pip_services3_messaging/pip_service3_messaging.dart';
+// import './MessageQueueFixture.dart';
 
-// suite('MemoryMessageQueue', () => {
-//     let queue: MemoryMessageQueue;
-//     let fixture: MessageQueueFixture;
+// void main(){
+// group('MemoryMessageQueue', ()  {
+//     MemoryMessageQueue queue ;
+//     MessageQueueFixture fixture;
 
-//     suiteSetup((done) => {
-//         queue = new MemoryMessageQueue("TestQueue");
-//         fixture = new MessageQueueFixture(queue);
-//         queue.open(null, done);
+//     setUpAll(() async {
+//         queue = MemoryMessageQueue('TestQueue');
+//         fixture = MessageQueueFixture(queue);
+//         await queue.open(null);
 //     });
 
-//     suiteTeardown((done) => {
-//         queue.close(null, done);
+//     tearDownAll(() async  {
+//         await queue.close(null, );
 //     });
 
-//     setup((done) => {
-//         queue.clear(null, done);
+//     setUp(() async {
+//         await queue.clear(null, );
 //     });
 
-//     test('Send Receive Message', (done) => {
-//         fixture.testSendReceiveMessage(done);
+//     test('Send Receive Message', ()  {
+//         fixture.testSendReceiveMessage();
 //     });
 
-//     test('Receive Send Message', (done) => {
-//         fixture.testReceiveSendMessage(done);
+//     test('Receive Send Message', ()  {
+//         fixture.testReceiveSendMessage();
 //     });
 
-//     test('Receive And Complete Message', (done) => {
-//         fixture.testReceiveCompleteMessage(done);
+//     test('Receive And Complete Message', ()  {
+//         fixture.testReceiveCompleteMessage();
 //     });
 
-//     test('Receive And Abandon Message', (done) => {
-//         fixture.testReceiveAbandonMessage(done);
+//     test('Receive And Abandon Message', ()  {
+//         fixture.testReceiveAbandonMessage();
 //     });
 
-//     test('Send Peek Message', (done) => {
-//         fixture.testSendPeekMessage(done);
+//     test('Send Peek Message', ()  {
+//         fixture.testSendPeekMessage();
 //     });
 
-//     test('Peek No Message', (done) => {
-//         fixture.testPeekNoMessage(done);
+//     test('Peek No Message', ()  {
+//         fixture.testPeekNoMessage();
 //     });
 
-//     test('Move To Dead Message', (done) => {
-//         fixture.testMoveToDeadMessage(done);
+//     test('Move To Dead Message', ()  {
+//         fixture.testMoveToDeadMessage();
 //     });
 
-//     test('On Message', (done) => {
-//         fixture.testOnMessage(done);
+//     test('On Message', ()  {
+//         fixture.testOnMessage();
 //     });
 
 // });
+// }

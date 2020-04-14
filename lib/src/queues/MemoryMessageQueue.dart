@@ -1,456 +1,377 @@
-//  @module queues 
-//  @hidden 
-// const async = require('async');
+import 'dart:async';
+import 'package:pip_services3_components/pip_services3_components.dart';
+import 'package:pip_services3_commons/pip_services3_commons.dart';
 
-// import { ConnectionParams } from 'pip-services3-components-node';
-// import { CredentialParams } from 'pip-services3-components-node';
+import './IMessageReceiver.dart';
+import './MessageQueue.dart';
+import './MessageEnvelope.dart';
+import './MessagingCapabilities.dart';
+import './LockedMessage.dart';
 
-// import { IMessageReceiver } from './IMessageReceiver';
-// import { MessageQueue } from './MessageQueue';
-// import { MessageEnvelope } from './MessageEnvelope';
-// import { MessagingCapabilities } from './MessagingCapabilities';
-// import { LockedMessage } from './LockedMessage';
+/// Message queue that sends and receives messages within the same process by using shared memory.
+///
+/// This queue is typically used for testing to mock real queues.
+///
+/// ### Configuration parameters ###
+///
+/// - [name]:                        name of the message queue
+///
+/// ### References ###
+///
+/// - \*:logger:\*:\*:1.0           (optional) [ILogger] components to pass log messages
+/// - \*:counters:\*:\*:1.0         (optional) [ICounters] components to pass collected measurements
+///
+/// See [MessageQueue]
+/// See [MessagingCapabilities]
+///
+/// ### Example ###
+///
+///     var queue = MessageQueue("myqueue");
+///
+///     queue.send("123", MessageEnvelop(null, "mymessage", "ABC"));
+///
+///     var message = await queue.receive("123");
+///     if (message != null) {
+///        ...
+///        await queue.complete("123", message);
+///     }
+///
 
-// 
-// /// Message queue that sends and receives messages within the same process by using shared memory.
-// /// 
-// /// This queue is typically used for testing to mock real queues.
-// /// 
-// /// ### Configuration parameters ###
-// /// 
-// /// - name:                        name of the message queue
-// /// 
-// /// ### References ###
-// /// 
-// /// - <code>\*:logger:\*:\*:1.0</code>           (optional) [[https://rawgit.com/pip-services-node/pip-services3-components-node/master/doc/api/interfaces/log.ilogger.html ILogger]] components to pass log messages
-// /// - <code>\*:counters:\*:\*:1.0</code>         (optional) [[https://rawgit.com/pip-services-node/pip-services3-components-node/master/doc/api/interfaces/count.icounters.html ICounters]] components to pass collected measurements
-// /// 
-// /// See [[MessageQueue]]
-// /// See [[MessagingCapabilities]]
-// /// 
-// /// ### Example ###
-// /// 
-// ///     let queue = new MessageQueue("myqueue");
-// /// 
-// ///     queue.send("123", new MessageEnvelop(null, "mymessage", "ABC"));
-// /// 
-// ///     queue.receive("123", (err, message) => {
-// ///         if (message != null) {
-// ///            ...
-// ///            queue.complete("123", message);
-// ///         }
-// ///     });
-//  
-// export class MemoryMessageQueue extends MessageQueue {
-//     private _messages: MessageEnvelope[] = [];
-//     private _lockTokenSequence: number = 0;
-//     private _lockedMessages: { [id: number]: LockedMessage; } = {};
-//     private _opened: boolean = false;
-//      Used to stop the listening process. 
-//     private _cancel: boolean = false;
+class MemoryMessageQueue extends MessageQueue {
+  var _messages = <MessageEnvelope>[];
+  int _lockTokenSequence = 0;
+  var _lockedMessages = <int, LockedMessage>{};
+  bool _opened = false;
+  //Used to stop the listening process.
+  bool _cancel = false;
 
-//     
-//     /// Creates a new instance of the message queue.
-//     /// 
-//     /// - name  (optional) a queue name.
-//     /// 
-//     /// See [[MessagingCapabilities]]
-//      
-//     public constructor(name?: string) {
-//         super(name);
-//         this._capabilities = new MessagingCapabilities(true, true, true, true, true, true, true, false, true);
-//     }
+  /// Creates a new instance of the message queue.
+  ///
+  /// - [name]  (optional) a queue name.
+  ///
+  /// See [[MessagingCapabilities]]
 
-//     
-// 	/// Checks if the component is opened.
-// 	/// 
-// 	/// @returns true if the component has been opened and false otherwise.
-//      
-//     public isOpen(): boolean {
-//         return this._opened;
-//     }
+  MemoryMessageQueue([String name]) : super(name) {
+    capabilities = MessagingCapabilities(
+        true, true, true, true, true, true, true, false, true);
+  }
 
-//     
-//     /// Opens the component with given connection and credential parameters.
-//     /// 
-//     /// - correlationId     (optional) transaction id to trace execution through call chain.
-//     /// - connection        connection parameters
-//     /// - credential        credential parameters
-//     /// - callback 			callback function that receives error or null no errors occured.
-//      
-//     protected openWithParams(correlationId: string, connection: ConnectionParams, credential: CredentialParams, callback: (err: any) => void): void {
-//         this._opened = true;
-//         callback(null);
-//     }
+  /// Checks if the component is opened.
+  ///
+  /// Returns true if the component has been opened and false otherwise.
+  @override
+  bool isOpen() {
+    return _opened;
+  }
 
-//     
-// 	/// Closes component and frees used resources.
-// 	/// 
-// 	/// - correlationId 	(optional) transaction id to trace execution through call chain.
-//     /// - callback 			callback function that receives error or null no errors occured.
-//      
-//     public close(correlationId: string, callback: (err: any) => void): void {
-//         this._opened = false;
-//         this._cancel = true;
-//         this._logger.trace(correlationId, "Closed queue %s", this);
-//         callback(null);
-//     }
+  /// Opens the component with given connection and credential parameters.
+  ///
+  /// - [correlationId]     (optional) transaction id to trace execution through call chain.
+  /// - [connection]        connection parameters
+  /// - [credential]        credential parameters
+  /// Return 			Future that receives error or null no errors occured.
+  @override
+  Future openWithParams(String correlationId, ConnectionParams connection,
+      CredentialParams credential) async {
+    _opened = true;
+  }
 
-//     
-// 	/// Clears component state.
-// 	/// 
-// 	/// - correlationId 	(optional) transaction id to trace execution through call chain.
-//     /// - callback 			callback function that receives error or null no errors occured.
-//      
-//     public clear(correlationId: string, callback: (err?: any) => void): void {
-//         this._messages = [];
-//         this._lockedMessages = {};
-//         this._cancel = false;
+  /// Closes component and frees used resources.
+  ///
+  /// - [correlationId] 	(optional) transaction id to trace execution through call chain.
+  /// Return 			Future that receives error or null no errors occured.
+  @override
+  Future close(String correlationId) async {
+    _opened = false;
+    _cancel = true;
+    logger.trace(correlationId, 'Closed queue %s', [this]);
+  }
 
-//         callback();
-//     }
+  /// Clears component state.
+  ///
+  /// - [correlationId] 	(optional) transaction id to trace execution through call chain.
+  /// Return 			Future that receives error or null no errors occured.
+  @override
+  Future clear(String correlationId) async {
+    _messages = <MessageEnvelope>[];
+    _lockedMessages = <int, LockedMessage>{};
+    _cancel = false;
+  }
 
-//     
-//     /// Reads the current number of messages in the queue to be delivered.
-//     /// 
-//     /// - callback      callback function that receives number of messages or error.
-//      
-//     public readMessageCount(callback: (err: any, count: number) => void): void {
-//         let count = this._messages.length;
-//         callback(null, count);
-//     }
+  /// Reads the current number of messages in the queue to be delivered.
+  ///
+  /// Return      Future that receives number of messages or error.
+  @override
+  Future<int> readMessageCount() async {
+    return _messages.length;
+  }
 
-//     
-//     /// Sends a message into the queue.
-//     /// 
-//     /// - correlationId     (optional) transaction id to trace execution through call chain.
-//     /// - envelope          a message envelop to be sent.
-//     /// - callback          (optional) callback function that receives error or null for success.
-//      
-//     public send(correlationId: string, envelope: MessageEnvelope, callback?: (err: any) => void): void {
-//         try {
-//             envelope.sent_time = new Date();
-//             // Add message to the queue
-//             this._messages.push(envelope);
+  /// Sends a message into the queue.
+  ///
+  /// - [correlationId]     (optional) transaction id to trace execution through call chain.
+  /// - [envelope]          a message envelop to be sent.
+  /// Return          (optional) Future that receives error or null for success.
+  @override
+  Future send(String correlationId, MessageEnvelope envelope) async {
+    envelope.sent_time = DateTime.now();
+    // Add message to the queue
+    _messages.add(envelope);
+    counters.incrementOne('queue.' + getName() + '.sent_messages');
+    logger.debug(envelope.correlation_id, 'Sent message %s via %s',
+        [envelope.toString(), toString()]);
+  }
 
-//             this._counters.incrementOne("queue." + this.getName() + ".sent_messages");
-//             this._logger.debug(envelope.correlation_id, "Sent message %s via %s", envelope.toString(), this.toString());
+  /// Peeks a single incoming message from the queue without removing it.
+  /// If there are no messages available in the queue it returns null.
+  ///
+  /// - [correlationId]     (optional) transaction id to trace execution through call chain.
+  /// Return          Future that receives a message or error.
+  @override
+  Future<MessageEnvelope> peek(String correlationId) async {
+    MessageEnvelope message;
+    // Pick a message
+    if (_messages.isNotEmpty) {
+      message = _messages[0];
+    }
 
-//             if (callback) callback(null);
-//         } catch (ex) {
-//             if (callback) callback(ex);
-//             else throw ex;
-//         }
-//     }
+    if (message != null) {
+      logger.trace(message.correlation_id, 'Peeked message %s on %s',
+          [message, toString()]);
+    }
 
-//     
-//     /// Peeks a single incoming message from the queue without removing it.
-//     /// If there are no messages available in the queue it returns null.
-//     /// 
-//     /// - correlationId     (optional) transaction id to trace execution through call chain.
-//     /// - callback          callback function that receives a message or error.
-//      
-//     public peek(correlationId: string, callback: (err: any, result: MessageEnvelope) => void): void {
-//         try {
-//             let message: MessageEnvelope = null;
+    return message;
+  }
 
-//             // Pick a message
-//             if (this._messages.length > 0)
-//                 message = this._messages[0];
+  /// Peeks multiple incoming messages from the queue without removing them.
+  /// If there are no messages available in the queue it returns an empty list.
+  ///
+  /// - [correlationId]     (optional) transaction id to trace execution through call chain.
+  /// - [messageCount]      a maximum number of messages to peek.
+  /// Return          Future that receives a list with messages or error.
+  @override
+  Future<List<MessageEnvelope>> peekBatch(
+      String correlationId, int messageCount) async {
+    var messages = _messages.sublist(0, messageCount);
+    logger.trace(correlationId, 'Peeked %d messages on %s',
+        [messages.length, toString()]);
+    return messages;
+  }
 
-//             if (message != null)
-//                 this._logger.trace(message.correlation_id, "Peeked message %s on %s", message, this.toString());
+  /// Receives an incoming message and removes it from the queue.
+  ///
+  /// - [correlationId]     (optional) transaction id to trace execution through call chain.
+  /// - [waitTimeout]       a timeout in milliseconds to wait for a message to come.
+  /// Return          Future that receives a message or error.
+  @override
+  Future<MessageEnvelope> receive(String correlationId, int waitTimeout) async {
+    var err;
+    MessageEnvelope message;
+    var messageReceived = false;
 
-//             callback(null, message);
-//         } catch (ex) {
-//             callback(ex, null);
-//         }
-//     }
+    var checkIntervalMs = 100;
+    var i = 0;
 
-//     
-//     /// Peeks multiple incoming messages from the queue without removing them.
-//     /// If there are no messages available in the queue it returns an empty list.
-//     /// 
-//     /// - correlationId     (optional) transaction id to trace execution through call chain.
-//     /// - messageCount      a maximum number of messages to peek.
-//     /// - callback          callback function that receives a list with messages or error.
-//      
-//     public peekBatch(correlationId: string, messageCount: number, callback: (err: any, result: MessageEnvelope[]) => void): void {
-//         try {
-//             let messages = this._messages.slice(0, messageCount);
-            
-//             this._logger.trace(correlationId, "Peeked %d messages on %s", messages.length, this.toString());
-        
-//             callback(null, messages);
-//         } catch (ex) {
-//             callback(ex, null);
-//         }
-//     }
+    for (; i < waitTimeout && !messageReceived;) {
+      i = i + checkIntervalMs;
 
-//     
-//     /// Receives an incoming message and removes it from the queue.
-//     /// 
-//     /// - correlationId     (optional) transaction id to trace execution through call chain.
-//     /// - waitTimeout       a timeout in milliseconds to wait for a message to come.
-//     /// - callback          callback function that receives a message or error.
-//      
-//     public receive(correlationId: string, waitTimeout: number, callback: (err: any, result: MessageEnvelope) => void): void {
-//         let err: any = null;
-//         let message: MessageEnvelope = null;
-//         let messageReceived: boolean = false;
+      await Future.delayed(Duration(milliseconds: checkIntervalMs), () {
+        if (_messages.isEmpty) {
+          return null;
+        }
 
-//         let checkIntervalMs = 100;
-//         let i = 0;
-//         async.whilst(
-//             () => {
-//                 return i < waitTimeout && !messageReceived;
-//             },
-//             (whilstCallback) => {
-//                 i = i + checkIntervalMs;
+        try {
+          // Get message the the queue
+          message = _messages.removeAt(0);
 
-//                 setTimeout(() => {
-//                     if (this._messages.length == 0) {
-//                         whilstCallback();
-//                         return;
-//                     }
+          if (message != null) {
+            // Generate and set locked token
+            var lockedToken = _lockTokenSequence++;
+            message.setReference(lockedToken);
 
-//                     try {
-//                         // Get message the the queue
-//                         message = this._messages.shift();
+            // Add messages to locked messages list
+            var lockedMessage = LockedMessage();
+            var now = DateTime.now();
+            lockedMessage.expirationTime =
+                now.add(Duration(milliseconds: waitTimeout));
+            lockedMessage.message = message;
+            lockedMessage.timeout = waitTimeout;
+            _lockedMessages[lockedToken] = lockedMessage;
+          }
 
-//                         if (message != null) {
-//                             // Generate and set locked token
-//                             var lockedToken = this._lockTokenSequence++;
-//                             message.setReference(lockedToken);
+          if (message != null) {
+            counters.incrementOne('queue.' + getName() + '.received_messages');
+            logger.debug(message.correlation_id, 'Received message %s via %s',
+                [message, toString()]);
+          }
+        } catch (ex) {
+          err = ex;
+        }
 
-//                             // Add messages to locked messages list
-//                             let lockedMessage: LockedMessage = new LockedMessage();
-//                             let now: Date = new Date();
-//                             now.setMilliseconds(now.getMilliseconds() + waitTimeout);
-//                             lockedMessage.expirationTime = now;
-//                             lockedMessage.message = message;
-//                             lockedMessage.timeout = waitTimeout;
-//                             this._lockedMessages[lockedToken] = lockedMessage;
-//                         }
+        messageReceived = true;
+        return null;
+      });
+    }
 
-//                         if (message != null) {
-//                             this._counters.incrementOne("queue." + this.getName() + ".received_messages");
-//                             this._logger.debug(message.correlation_id, "Received message %s via %s", message, this.toString());
-//                         }
-//                     } catch (ex) {
-//                         err = ex;
-//                     }
+    if (err != null) {
+      throw err;
+    }
 
-//                     messageReceived = true;
-//                     whilstCallback();
-//                 }, checkIntervalMs);
-//             },
-//             (err) => {
-//                 callback(err, message);
-//             }
-//         );
-//     }
+    return message;
+  }
 
-//     
-//     /// Renews a lock on a message that makes it invisible from other receivers in the queue.
-//     /// This method is usually used to extend the message processing time.
-//     /// 
-//     /// - message       a message to extend its lock.
-//     /// - lockTimeout   a locking timeout in milliseconds.
-//     /// - callback      (optional) callback function that receives an error or null for success.
-//      
-//     public renewLock(message: MessageEnvelope, lockTimeout: number, callback?: (err: any) => void): void {
-//         if (message.getReference() == null) {
-//             if (callback) callback(null);
-//             return;
-//         }
+  /// Renews a lock on a message that makes it invisible from other receivers in the queue.
+  /// This method is usually used to extend the message processing time.
+  ///
+  /// - [message]       a message to extend its lock.
+  /// - [lockTimeout]   a locking timeout in milliseconds.
+  /// Return      (optional) Future that receives an error or null for success.
+  @override
+  Future renewLock(MessageEnvelope message, int lockTimeout) async {
+    if (message.getReference() == null) {
+      return null;
+    }
 
-//         // Get message from locked queue
-//         try {
-//             let lockedToken: number = message.getReference();
-//             let lockedMessage: LockedMessage = this._lockedMessages[lockedToken];
+    // Get message from locked queue
 
-//             // If lock is found, extend the lock
-//             if (lockedMessage) {
-//                 let now: Date = new Date();
-//                 // Todo: Shall we skip if the message already expired?
-//                 if (lockedMessage.expirationTime > now) {
-//                     now.setMilliseconds(now.getMilliseconds() + lockedMessage.timeout);
-//                     lockedMessage.expirationTime = now;
-//                 }
-//             }
+    int lockedToken = message.getReference();
+    var lockedMessage = _lockedMessages[lockedToken];
 
-//             this._logger.trace(message.correlation_id, "Renewed lock for message %s at %s", message, this.toString());
+    // If lock is found, extend the lock
+    if (lockedMessage != null) {
+      var now = DateTime.now();
+      // Todo: Shall we skip if the message already expired?
+      if (lockedMessage.expirationTime.millisecondsSinceEpoch >
+          now.millisecondsSinceEpoch) {
+        lockedMessage.expirationTime =
+            now.add(Duration(milliseconds: lockedMessage.timeout));
+      }
+    }
 
-//             if (callback) callback(null);
-//         } catch (ex) {
-//             if (callback) callback(ex);
-//             else throw ex;
-//         }
-//     }
+    logger.trace(message.correlation_id, 'Renewed lock for message %s at %s',
+        [message, toString()]);
+  }
 
-//     
-//     /// Permanently removes a message from the queue.
-//     /// This method is usually used to remove the message after successful processing.
-//     /// 
-//     /// - message   a message to remove.
-//     /// - callback  (optional) callback function that receives an error or null for success.
-//      
-//     public complete(message: MessageEnvelope, callback: (err: any) => void): void {
-//         if (message.getReference() == null) {
-//             if (callback) callback(null);
-//             return;
-//         }
+  /// Permanently removes a message from the queue.
+  /// This method is usually used to remove the message after successful processing.
+  ///
+  /// - message   a message to remove.
+  /// Return  (optional) Future that receives an error or null for success.
+  @override
+  Future complete(MessageEnvelope message) async {
+    if (message.getReference() == null) {
+      return null;
+    }
+    int lockKey = message.getReference();
+    _lockedMessages.remove(lockKey);
+    message.setReference(null);
+    logger.trace(message.correlation_id, 'Completed message %s at %s',
+        [message, toString()]);
+  }
 
-//         try {
-//             let lockKey: number = message.getReference();
-//             delete this._lockedMessages[lockKey];
-//             message.setReference(null);
+  /// Returnes message into the queue and makes it available for all subscribers to receive it again.
+  /// This method is usually used to return a message which could not be processed at the moment
+  /// to repeat the attempt. Messages that cause unrecoverable errors shall be removed permanently
+  /// or/and send to dead letter queue.
+  ///
+  /// - [message]   a message to return.
+  /// Return  (optional) Future that receives an error or null for success.
+  @override
+  Future abandon(MessageEnvelope message) async {
+    if (message.getReference() == null) {
+      return null;
+    }
 
-//             this._logger.trace(message.correlation_id, "Completed message %s at %s", message, this.toString());
+    // Get message from locked queue
+    int lockedToken = message.getReference();
+    var lockedMessage = _lockedMessages[lockedToken];
+    if (lockedMessage != null) {
+      // Remove from locked messages
+      _lockedMessages..remove(lockedToken);
+      message.setReference(null);
 
-//             if (callback) callback(null);
-//         } catch (ex) {
-//             if (callback) callback(ex);
-//             else throw ex;
-//         }
-//     }
+      // Skip if it is already expired
+      if (lockedMessage.expirationTime.millisecondsSinceEpoch <=
+          DateTime.now().millisecondsSinceEpoch) {
+        return null;
+      }
+    }
+    // Skip if it absent
+    else {
+      return null;
+    }
 
-//     
-//     /// Returnes message into the queue and makes it available for all subscribers to receive it again.
-//     /// This method is usually used to return a message which could not be processed at the moment
-//     /// to repeat the attempt. Messages that cause unrecoverable errors shall be removed permanently
-//     /// or/and send to dead letter queue.
-//     /// 
-//     /// - message   a message to return.
-//     /// - callback  (optional) callback function that receives an error or null for success.
-//      
-//     public abandon(message: MessageEnvelope, callback: (err: any) => void): void {
-//         if (message.getReference() == null) {
-//             if (callback) callback(null);
-//             return;
-//         }
+    logger.trace(message.correlation_id, 'Abandoned message %s at %s',
+        [message, toString()]);
 
-//         try {
-//             // Get message from locked queue
-//             let lockedToken: number = message.getReference();
-//             let lockedMessage: LockedMessage = this._lockedMessages[lockedToken];
-//             if (lockedMessage) {
-//                 // Remove from locked messages
-//                 delete this._lockedMessages[lockedToken];
-//                 message.setReference(null);
+    return send(message.correlation_id, message);
+  }
 
-//                 // Skip if it is already expired
-//                 if (lockedMessage.expirationTime <= new Date()) {
-//                     callback(null);
-//                     return;
-//                 }
-//             }
-//             // Skip if it absent
-//             else {
-//                 if (callback) callback(null);
-//                 return;
-//             }
+  /// Permanently removes a message from the queue and sends it to dead letter queue.
+  ///
+  /// - [message]   a message to be removed.
+  /// Return  (optional) Future that receives an error or null for success.
+  @override
+  Future moveToDeadLetter(MessageEnvelope message) async {
+    if (message.getReference() == null) {
+      return null;
+    }
 
-//             this._logger.trace(message.correlation_id, "Abandoned message %s at %s", message, this.toString());
+    int lockedToken = message.getReference();
+    _lockedMessages.remove(lockedToken);
+    message.setReference(null);
 
-//             if (callback) callback(null);
-//         } catch (ex) {
-//             if (callback) callback(ex);
-//             else throw ex;
-//         }
+    counters.incrementOne('queue.' + getName() + '.dead_messages');
+    logger.trace(message.correlation_id, 'Moved to dead message %s at %s',
+        [message, toString()]);
+  }
 
-//         this.send(message.correlation_id, message, null);
-//     }
+  /// Listens for incoming messages and blocks the current thread until queue is closed.
+  ///
+  /// - [correlationId]     (optional) transaction id to trace execution through call chain.
+  /// - [receiver]          a receiver to receive incoming messages.
+  ///
+  /// See [IMessageReceiver]
+  /// See [receive]
+  @override
+  void listen(String correlationId, IMessageReceiver receiver) async {
+    var timeoutInterval = 1000;
 
-//     
-//     /// Permanently removes a message from the queue and sends it to dead letter queue.
-//     /// 
-//     /// - message   a message to be removed.
-//     /// - callback  (optional) callback function that receives an error or null for success.
-//      
-//     public moveToDeadLetter(message: MessageEnvelope, callback: (err: any) => void): void {
-//         if (message.getReference() == null) {
-//             if (callback) callback(null);
-//             return;
-//         }
+    logger.trace(null, 'Started listening messages at %s', [toString()]);
+    _cancel = false;
+    try {
+      for (; !_cancel;) {
+        MessageEnvelope message;
 
-//         try {
-//             let lockedToken: number = message.getReference();
-//             delete this._lockedMessages[lockedToken];
-//             message.setReference(null);
+        try {
+          var result = await receive(correlationId, timeoutInterval);
+          message = result;
+        } catch (err) {
+          logger.error(correlationId, err, 'Failed to receive the message');
+        }
 
-//             this._counters.incrementOne("queue." + this.getName() + ".dead_messages");
-//             this._logger.trace(message.correlation_id, "Moved to dead message %s at %s", message, this.toString());
+        if (message != null && !_cancel) {
+          try {
+            await receiver.receiveMessage(message, this);
+          } catch (err) {
+            logger.error(correlationId, err, 'Failed to process the message');
+          }
+        }
 
-//             if (callback) callback(null);
-//         } catch (ex) {
-//             if (callback) callback(ex);
-//             else throw ex;
-//         }
-//     }
+        await Future.delayed(
+            Duration(milliseconds: timeoutInterval), () => null);
+      }
+    } catch (err) {
+      logger.error(correlationId, ApplicationException().wrap(err),
+          'Failed to process the message');
+    }
+  }
 
-//     
-//     /// Listens for incoming messages and blocks the current thread until queue is closed.
-//     /// 
-//     /// - correlationId     (optional) transaction id to trace execution through call chain.
-//     /// - receiver          a receiver to receive incoming messages.
-//     /// 
-//     /// See [[IMessageReceiver]]
-//     /// See [[receive]]
-//      
-//     public listen(correlationId: string, receiver: IMessageReceiver): void {
-//         let timeoutInterval = 1000;
-
-//         this._logger.trace(null, "Started listening messages at %s", this.toString());
-
-//         this._cancel = false;
-
-//         async.whilst(
-//             () => {
-//                 return !this._cancel;
-//             },
-//             (whilstCallback) => {
-//                 let message: MessageEnvelope;
-
-//                 async.series([
-//                     (callback) => {
-//                         this.receive(correlationId, timeoutInterval, (err, result) => {
-//                             message = result;
-//                             if (err) this._logger.error(correlationId, err, "Failed to receive the message");
-//                             callback();
-//                         })
-//                     },
-//                     (callback) => {
-//                         if (message != null && !this._cancel) {
-//                             receiver.receiveMessage(message, this, (err) => {
-//                                 if (err) this._logger.error(correlationId, err, "Failed to process the message");
-//                                 callback();
-//                             });
-//                         }
-//                     },
-//                 ]);
-
-//                 async.series([
-//                     (callback) => {
-//                         setTimeout(callback, timeoutInterval);
-//                     }
-//                 ], whilstCallback);
-//             },
-//             (err) => {
-//                 if (err) this._logger.error(correlationId, err, "Failed to process the message");
-//             }
-//         );
-//     }
-
-//     
-//     /// Ends listening for incoming messages.
-//     /// When this method is call [[listen]] unblocks the thread and execution continues.
-//     /// 
-//     /// - correlationId     (optional) transaction id to trace execution through call chain.
-//      
-//     public endListen(correlationId: string): void {
-//         this._cancel = true;
-//     }
-
-// }
+  /// Ends listening for incoming messages.
+  /// When this method is call [[listen]] unblocks the thread and execution continues.
+  ///
+  /// - [correlationId]     (optional) transaction id to trace execution through call chain.
+  @override
+  void endListen(String correlationId) {
+    _cancel = true;
+  }
+}
