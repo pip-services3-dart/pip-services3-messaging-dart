@@ -28,7 +28,7 @@ import './LockedMessage.dart';
 ///
 ///     var queue = MessageQueue("myqueue");
 ///
-///     queue.send("123", MessageEnvelop(null, "mymessage", "ABC"));
+///     await queue.send("123", MessageEnvelop(null, "mymessage", "ABC"));
 ///
 ///     var message = await queue.receive("123");
 ///     if (message != null) {
@@ -49,8 +49,7 @@ class MemoryMessageQueue extends MessageQueue {
   ///
   /// - [name]  (optional) a queue name.
   ///
-  /// See [[MessagingCapabilities]]
-
+  /// See [MessagingCapabilities]
   MemoryMessageQueue([String name]) : super(name) {
     capabilities = MessagingCapabilities(
         true, true, true, true, true, true, true, false, true);
@@ -69,7 +68,8 @@ class MemoryMessageQueue extends MessageQueue {
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [connection]        connection parameters
   /// - [credential]        credential parameters
-  /// Return 			Future that receives error or null no errors occured.
+  /// Return 			          Future that receives null no errors occured.
+  /// Throws error
   @override
   Future openWithParams(String correlationId, ConnectionParams connection,
       CredentialParams credential) async {
@@ -79,7 +79,8 @@ class MemoryMessageQueue extends MessageQueue {
   /// Closes component and frees used resources.
   ///
   /// - [correlationId] 	(optional) transaction id to trace execution through call chain.
-  /// Return 			Future that receives error or null no errors occured.
+  /// Return 			        Future that receives null no errors occured.
+  /// Throws error
   @override
   Future close(String correlationId) async {
     _opened = false;
@@ -90,7 +91,8 @@ class MemoryMessageQueue extends MessageQueue {
   /// Clears component state.
   ///
   /// - [correlationId] 	(optional) transaction id to trace execution through call chain.
-  /// Return 			Future that receives error or null no errors occured.
+  /// Return 			        Future that receives null no errors occured.
+  /// Throws error
   @override
   Future clear(String correlationId) async {
     _messages = <MessageEnvelope>[];
@@ -100,7 +102,8 @@ class MemoryMessageQueue extends MessageQueue {
 
   /// Reads the current number of messages in the queue to be delivered.
   ///
-  /// Return      Future that receives number of messages or error.
+  /// Return      Future that receives number of messages
+  /// Throws error.
   @override
   Future<int> readMessageCount() async {
     return _messages.length;
@@ -110,7 +113,8 @@ class MemoryMessageQueue extends MessageQueue {
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [envelope]          a message envelop to be sent.
-  /// Return          (optional) Future that receives error or null for success.
+  /// Return          (optional) Future that receives null for success.
+  /// Throws error
   @override
   Future send(String correlationId, MessageEnvelope envelope) async {
     envelope.sent_time = DateTime.now();
@@ -125,7 +129,8 @@ class MemoryMessageQueue extends MessageQueue {
   /// If there are no messages available in the queue it returns null.
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
-  /// Return          Future that receives a message or error.
+  /// Return          Future that receives a message 
+  /// Throws error.
   @override
   Future<MessageEnvelope> peek(String correlationId) async {
     MessageEnvelope message;
@@ -147,7 +152,8 @@ class MemoryMessageQueue extends MessageQueue {
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [messageCount]      a maximum number of messages to peek.
-  /// Return          Future that receives a list with messages or error.
+  /// Return          Future that receives a list with messages 
+  /// Throws error.
   @override
   Future<List<MessageEnvelope>> peekBatch(
       String correlationId, int messageCount) async {
@@ -161,7 +167,8 @@ class MemoryMessageQueue extends MessageQueue {
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [waitTimeout]       a timeout in milliseconds to wait for a message to come.
-  /// Return          Future that receives a message or error.
+  /// Return          Future that receives a message 
+  /// Throws error.
   @override
   Future<MessageEnvelope> receive(String correlationId, int waitTimeout) async {
     var err;
@@ -224,7 +231,8 @@ class MemoryMessageQueue extends MessageQueue {
   ///
   /// - [message]       a message to extend its lock.
   /// - [lockTimeout]   a locking timeout in milliseconds.
-  /// Return      (optional) Future that receives an error or null for success.
+  /// Return      (optional) Future that receives or null for success.
+  /// Throws error
   @override
   Future renewLock(MessageEnvelope message, int lockTimeout) async {
     if (message.getReference() == null) {
@@ -232,14 +240,13 @@ class MemoryMessageQueue extends MessageQueue {
     }
 
     // Get message from locked queue
-
     int lockedToken = message.getReference();
     var lockedMessage = _lockedMessages[lockedToken];
 
     // If lock is found, extend the lock
     if (lockedMessage != null) {
       var now = DateTime.now();
-      // Todo: Shall we skip if the message already expired?
+      // TODO: Shall we skip if the message already expired?
       if (lockedMessage.expirationTime.millisecondsSinceEpoch >
           now.millisecondsSinceEpoch) {
         lockedMessage.expirationTime =
@@ -255,7 +262,8 @@ class MemoryMessageQueue extends MessageQueue {
   /// This method is usually used to remove the message after successful processing.
   ///
   /// - message   a message to remove.
-  /// Return  (optional) Future that receives an error or null for success.
+  /// Return  (optional) Future that receives or null for success.
+  /// Throw error
   @override
   Future complete(MessageEnvelope message) async {
     if (message.getReference() == null) {
@@ -274,7 +282,8 @@ class MemoryMessageQueue extends MessageQueue {
   /// or/and send to dead letter queue.
   ///
   /// - [message]   a message to return.
-  /// Return  (optional) Future that receives an error or null for success.
+  /// Return  (optional) Future that receives an null for success.
+  /// Throws error
   @override
   Future abandon(MessageEnvelope message) async {
     if (message.getReference() == null) {
@@ -309,7 +318,8 @@ class MemoryMessageQueue extends MessageQueue {
   /// Permanently removes a message from the queue and sends it to dead letter queue.
   ///
   /// - [message]   a message to be removed.
-  /// Return  (optional) Future that receives an error or null for success.
+  /// Return  (optional) Future that receives or null for success.
+  /// Throws error
   @override
   Future moveToDeadLetter(MessageEnvelope message) async {
     if (message.getReference() == null) {

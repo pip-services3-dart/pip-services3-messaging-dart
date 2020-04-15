@@ -1,6 +1,5 @@
 import 'package:pip_services3_components/pip_services3_components.dart';
 import 'package:pip_services3_commons/pip_services3_commons.dart';
-
 import '../queues/MemoryMessageQueue.dart';
 
 /// Creates [MemoryMessageQueue] components by their descriptors.
@@ -8,7 +7,6 @@ import '../queues/MemoryMessageQueue.dart';
 ///
 /// See [Factory]
 /// See [MemoryMessageQueue]
-
 class DefaultMessagingFactory extends Factory {
   static final descriptor =
       Descriptor('pip-services', 'factory', 'messaging', 'default', '1.0');

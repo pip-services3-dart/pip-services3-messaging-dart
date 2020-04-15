@@ -1,233 +1,158 @@
-// let assert = require('chai').assert;
-// let async = require('async');
+import 'dart:async';
 
-// import { IMessageQueue } from '../../src/queues/IMessageQueue';
-// import { MessageEnvelope } from '../../src/queues/MessageEnvelope';
+import 'package:test/test.dart';
+import 'package:pip_services3_messaging/pip_service3_messaging.dart';
 
-// export class MessageQueueFixture {
-//     private _queue: IMessageQueue;
+class TestMessageReciver implements IMessageReceiver {
+  MessageEnvelope message;
 
-//     public constructor(queue: IMessageQueue) {
-//         this._queue = queue;
-//     }
+  @override
+  Future receiveMessage(MessageEnvelope envelope, IMessageQueue queue) {
+    message = envelope;
+  }
+}
 
-//     public testSendReceiveMessage(done) {
-//         let envelope1: MessageEnvelope = new MessageEnvelope("123", "Test", "Test message");
-//         let envelope2: MessageEnvelope;
+class MessageQueueFixture {
+  IMessageQueue _queue;
 
-//         async.series([
-//             (callback) => {
-//                 this._queue.send(null, envelope1, callback);
-//             },
-//             (callback) => {
-//                 var count = this._queue.readMessageCount((err, count) => {
-//                     assert.isTrue(count > 0);
-//                     callback(err);
-//                 });
-//             },
-//             (callback) => {
-//                 this._queue.receive(null, 10000, (err, result) => {
-//                     envelope2 = result;
+  MessageQueueFixture(IMessageQueue queue) {
+    _queue = queue;
+  }
 
-//                     assert.isNotNull(envelope2);
-//                     assert.equal(envelope1.message_type, envelope2.message_type);
-//                     assert.equal(envelope1.message, envelope2.message);
-//                     assert.equal(envelope1.correlation_id, envelope2.correlation_id);
+  void testSendReceiveMessage() async {
+    var envelope1 = MessageEnvelope('123', 'Test', 'Test message');
+    MessageEnvelope envelope2;
 
-//                     callback(err);
-//                 });
-//             }
-//         ], done);
-//     }
+    await _queue.send(null, envelope1);
 
-//     public testReceiveSendMessage(done) {
-//         let envelope1: MessageEnvelope = new MessageEnvelope("123", "Test", "Test message");
-//         let envelope2: MessageEnvelope;
+    var count = await _queue.readMessageCount();
+    expect(count > 0, isTrue);
 
-//         setTimeout(() => {
-//             this._queue.send(null, envelope1, () => { });
-//         }, 500);
+    var result = await _queue.receive(null, 10000);
+    envelope2 = result;
+    expect(envelope2, isNotNull);
+    expect(envelope1.message_type, envelope2.message_type);
+    expect(envelope1.message, envelope2.message);
+    expect(envelope1.correlation_id, envelope2.correlation_id);
+  }
 
-//         this._queue.receive(null, 10000, (err, result) => {
-//             envelope2 = result;
+  void testReceiveSendMessage() async {
+    var envelope1 = MessageEnvelope('123', 'Test', 'Test message');
+    MessageEnvelope envelope2;
 
-//             assert.isNotNull(envelope2);
-//             assert.equal(envelope1.message_type, envelope2.message_type);
-//             assert.equal(envelope1.message, envelope2.message);
-//             assert.equal(envelope1.correlation_id, envelope2.correlation_id);
+    await Future.delayed(Duration(milliseconds: 500), () async {
+      await _queue.send(null, envelope1);
+    });
 
-//             done(err);
-//         });
-//     }
+    var result = await _queue.receive(null, 10000);
+    envelope2 = result;
 
-//     public testReceiveCompleteMessage(done) {
-//         let envelope1: MessageEnvelope = new MessageEnvelope("123", "Test", "Test message");
-//         let envelope2: MessageEnvelope;
+    expect(envelope2, isNotNull);
+    expect(envelope1.message_type, envelope2.message_type);
+    expect(envelope1.message, envelope2.message);
+    expect(envelope1.correlation_id, envelope2.correlation_id);
+  }
 
-//         async.series([
-//             (callback) => {
-//                 this._queue.send(null, envelope1, callback);
-//             },
-//             (callback) => {
-//                 var count = this._queue.readMessageCount((err, count) => {
-//                     assert.isTrue(count > 0);
-//                     callback(err);
-//                 });
-//             },
-//             (callback) => {
-//                 this._queue.receive(null, 10000, (err, result) => {
-//                     envelope2 = result;
+  void testReceiveCompleteMessage() async {
+    var envelope1 = MessageEnvelope('123', 'Test', 'Test message');
+    MessageEnvelope envelope2;
 
-//                     assert.isNotNull(envelope2);
-//                     assert.equal(envelope1.message_type, envelope2.message_type);
-//                     assert.equal(envelope1.message, envelope2.message);
-//                     assert.equal(envelope1.correlation_id, envelope2.correlation_id);
+    await _queue.send(null, envelope1);
 
-//                     callback(err);
-//                 });
-//             },
-//             (callback) => {
-//                 this._queue.complete(envelope2, (err) => {
-//                     assert.isNull(envelope2.getReference());
-//                     callback(err);
-//                 });
-//             }
-//         ], done);
-//     }
+    var count = await _queue.readMessageCount();
+    expect(count > 0, isTrue);
 
-//     public testReceiveAbandonMessage(done) {
-//         let envelope1: MessageEnvelope = new MessageEnvelope("123", "Test", "Test message");
-//         let envelope2: MessageEnvelope;
+    var result = await _queue.receive(null, 10000);
+    envelope2 = result;
 
-//         async.series([
-//             (callback) => {
-//                 this._queue.send(null, envelope1, callback);
-//             },
-//             (callback) => {
-//                 this._queue.receive(null, 10000, (err, result) => {
-//                     envelope2 = result;
+    expect(envelope2, isNotNull);
+    expect(envelope1.message_type, envelope2.message_type);
+    expect(envelope1.message, envelope2.message);
+    expect(envelope1.correlation_id, envelope2.correlation_id);
 
-//                     assert.isNotNull(envelope2);
-//                     assert.equal(envelope1.message_type, envelope2.message_type);
-//                     assert.equal(envelope1.message, envelope2.message);
-//                     assert.equal(envelope1.correlation_id, envelope2.correlation_id);
+    await _queue.complete(envelope2);
+    expect(envelope2.getReference(), isNull);
+  }
 
-//                     callback(err);
-//                 });
-//             },
-//             (callback) => {
-//                 this._queue.abandon(envelope2, (err) => {
-//                     callback(err);
-//                 });
-//             },
-//             (callback) => {
-//                 this._queue.receive(null, 10000, (err, result) => {
-//                     envelope2 = result;
+  void testReceiveAbandonMessage() async {
+    var envelope1 = MessageEnvelope('123', 'Test', 'Test message');
+    MessageEnvelope envelope2;
 
-//                     assert.isNotNull(envelope2);
-//                     assert.equal(envelope1.message_type, envelope2.message_type);
-//                     assert.equal(envelope1.message, envelope2.message);
-//                     assert.equal(envelope1.correlation_id, envelope2.correlation_id);
+    await _queue.send(null, envelope1);
 
-//                     callback(err);
-//                 });
-//             }
-//         ], done);
-//     }
+    var result = await _queue.receive(null, 10000);
+    envelope2 = result;
 
-//     public testSendPeekMessage(done) {
-//         let envelope1: MessageEnvelope = new MessageEnvelope("123", "Test", "Test message");
-//         let envelope2: MessageEnvelope;
+    expect(envelope2, isNotNull);
+    expect(envelope1.message_type, envelope2.message_type);
+    expect(envelope1.message, envelope2.message);
+    expect(envelope1.correlation_id, envelope2.correlation_id);
 
-//         async.series([
-//             (callback) => {
-//                 this._queue.send(null, envelope1, callback);
-//             },
-//             (callback) => {
-//                 this._queue.peek(null, (err, result) => {
-//                     envelope2 = result;
+    await _queue.abandon(envelope2);
 
-//                     assert.isNotNull(envelope2);
-//                     assert.equal(envelope1.message_type, envelope2.message_type);
-//                     assert.equal(envelope1.message, envelope2.message);
-//                     assert.equal(envelope1.correlation_id, envelope2.correlation_id);
+    result = await _queue.receive(null, 10000);
+    envelope2 = result;
 
-//                     callback(err);
-//                 });
-//             }
-//         ], done);
-//     }
+    expect(envelope2, isNotNull);
+    expect(envelope1.message_type, envelope2.message_type);
+    expect(envelope1.message, envelope2.message);
+    expect(envelope1.correlation_id, envelope2.correlation_id);
+  }
 
-//     public testPeekNoMessage(done) {
-//         this._queue.peek(null, (err, result) => {
-//             assert.isNull(result);
-//             done();
-//         });
-//     }
+  void testSendPeekMessage() async {
+    var envelope1 = MessageEnvelope('123', 'Test', 'Test message');
+    MessageEnvelope envelope2;
 
-//     public testMoveToDeadMessage(done) {
-//         let envelope1: MessageEnvelope = new MessageEnvelope("123", "Test", "Test message");
-//         let envelope2: MessageEnvelope;
+    await _queue.send(null, envelope1);
 
-//         async.series([
-//             (callback) => {
-//                 this._queue.send(null, envelope1, callback);
-//             },
-//             (callback) => {
-//                 this._queue.receive(null, 10000, (err, result) => {
-//                     envelope2 = result;
+    var result = await _queue.peek(null);
+    envelope2 = result;
 
-//                     assert.isNotNull(envelope2);
-//                     assert.equal(envelope1.message_type, envelope2.message_type);
-//                     assert.equal(envelope1.message, envelope2.message);
-//                     assert.equal(envelope1.correlation_id, envelope2.correlation_id);
+    expect(envelope2, isNotNull);
+    expect(envelope1.message_type, envelope2.message_type);
+    expect(envelope1.message, envelope2.message);
+    expect(envelope1.correlation_id, envelope2.correlation_id);
+  }
 
-//                     callback(err);
-//                 });
-//             },
-//             (callback) => {
-//                 this._queue.moveToDeadLetter(envelope2, callback);
-//             }
-//         ], done);
-//     }
+  void testPeekNoMessage() async {
+    var result = await _queue.peek(null);
+    expect(result, isNull);
+  }
 
-//     public testOnMessage(done) {
-//         let envelope1: MessageEnvelope = new MessageEnvelope("123", "Test", "Test message");
-//         let envelope2: MessageEnvelope = null;
+  void testMoveToDeadMessage() async {
+    var envelope1 = MessageEnvelope('123', 'Test', 'Test message');
+    MessageEnvelope envelope2;
 
-//         this._queue.beginListen(null, {
-//             receiveMessage: (envelop: MessageEnvelope, queue: IMessageQueue, callback: (err: any) => void): void => {
-//                 envelope2 = envelop;
-//                 callback(null);
-//             }
-//         });
+    await _queue.send(null, envelope1);
 
-//         async.series([
-//             (callback) => {
-//                 setTimeout(() => {
-//                     callback();
-//                 }, 1000);
-//             },
-//             (callback) => {
-//                 this._queue.send(null, envelope1, callback);
-//             },
-//             (callback) => {
-//                 setTimeout(() => {
-//                     callback();
-//                 }, 1000);
-//             },
-//             (callback) => {
-//                 assert.isNotNull(envelope2);
-//                 assert.equal(envelope1.message_type, envelope2.message_type);
-//                 assert.equal(envelope1.message, envelope2.message);
-//                 assert.equal(envelope1.correlation_id, envelope2.correlation_id);
+    var result = await _queue.receive(null, 10000);
+    envelope2 = result;
 
-//                 callback();
-//             }
-//         ], (err) => {
-//             this._queue.endListen(null);
-//             done();
-//         });
-//     }
+    expect(envelope2, isNotNull);
+    expect(envelope1.message_type, envelope2.message_type);
+    expect(envelope1.message, envelope2.message);
+    expect(envelope1.correlation_id, envelope2.correlation_id);
 
-// }
+    await _queue.moveToDeadLetter(envelope2);
+  }
+
+  void testOnMessage() async {
+    var envelope1 = MessageEnvelope('123', 'Test', 'Test message');
+    MessageEnvelope envelope2;
+    var reciver = TestMessageReciver();
+    _queue.beginListen(null, reciver);
+
+    await Future.delayed(Duration(milliseconds: 1000), () {});
+    await _queue.send(null, envelope1);
+
+    await Future.delayed(Duration(milliseconds: 1000), () {});
+
+    envelope2 = reciver.message;
+    expect(envelope2, isNotNull);
+    expect(envelope1.message_type, envelope2.message_type);
+    expect(envelope1.message, envelope2.message);
+    expect(envelope1.correlation_id, envelope2.correlation_id);
+
+    _queue.endListen(null);
+  }
+}

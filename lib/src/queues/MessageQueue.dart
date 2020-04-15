@@ -11,19 +11,19 @@ import './MessageEnvelope.dart';
 ///
 /// ### Configuration parameters ###
 ///
-/// - name:                        name of the message queue
-/// - connection(s):
-///   - discovery_key:             key to retrieve parameters from discovery service
-///   - protocol:                  connection protocol like http, https, tcp, udp
-///   - host:                      host name or IP address
-///   - port:                      port number
-///   - uri:                       resource URI or connection string with all parameters in it
-/// - credential(s):
-///   - store_key:                 key to retrieve parameters from credential store
-///   - username:                  user name
-///   - password:                  user password
-///   - access_id:                 application access id
-///   - access_key:                application secret key
+/// - [name]:                        name of the message queue
+/// - [connection(s)]:
+///   - [discovery_key]:             key to retrieve parameters from discovery service
+///   - [protocol]:                  connection protocol like http, https, tcp, udp
+///   - [host]:                      host name or IP address
+///   - [port]:                      port number
+///   - [uri]:                       resource URI or connection string with all parameters in it
+/// - [credential(s)]:
+///   - [store_key]:                 key to retrieve parameters from credential store
+///   - [username]:                  user name
+///   - [password]:                  user password
+///   - [access_id]:                 application access id
+///   - [access_key]:                application secret key
 ///
 /// ### References ###
 ///
@@ -39,13 +39,12 @@ abstract class MessageQueue
   var connectionResolver = ConnectionResolver();
   var credentialResolver = CredentialResolver();
 
-  String name;
+  String name = '';
   MessagingCapabilities capabilities;
 
   /// Creates a new instance of the message queue.
   ///
   /// - [name]  (optional) a queue name
-
   MessageQueue([String name]) {
     name = name;
   }
@@ -53,7 +52,6 @@ abstract class MessageQueue
   /// Gets the queue name
   ///
   /// Returns the queue name.
-
   @override
   String getName() {
     return name;
@@ -98,8 +96,8 @@ abstract class MessageQueue
   /// Opens the component.
   ///
   /// - [correlationId] 	(optional) transaction id to trace execution through call chain.
-  /// Return 			Future that receives error or null no errors occured.
-
+  /// Return 			Future that receives null no errors occured.
+  /// Trows error
   @override
   Future open(String correlationId) async {
     ConnectionParams connection;
@@ -116,28 +114,30 @@ abstract class MessageQueue
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [connection]        connection parameters
   /// - [credential]        credential parameters
-  /// Return 			Future that receives error or null no errors occured.
-
+  /// Return 			Future that receives null no errors occured.
+  /// Trows error
   Future openWithParams(String correlationId, ConnectionParams connection,
       CredentialParams credential);
 
   /// Closes component and frees used resources.
   ///
   /// - correlationId 	(optional) transaction id to trace execution through call chain.
-  /// Return 			Future that receives error or null no errors occured.
-
+  /// Return 			      Future that receives  null no errors occured.
+  /// Throws error
   @override
   Future close(String correlationId);
 
   /// Clears component state.
   ///
   /// - [correlationId] 	(optional) transaction id to trace execution through call chain.
-  /// Return 			Future that receives error or null no errors occured.
+  /// Return 			Future that receives  null no errors occured.
+  /// Throws error
   Future clear(String correlationId);
 
   /// Reads the current number of messages in the queue to be delivered.
   ///
   /// Return      Future that receives number of messages or error.
+  /// Throws error
   @override
   Future<int> readMessageCount();
 
@@ -145,7 +145,8 @@ abstract class MessageQueue
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [envelope]          a message envelop to be sent.
-  /// Return          (optional) Future that receives error or null for success.
+  /// Return          (optional) Future that receives  null for success.
+  /// Throws error
   @override
   Future send(String correlationId, MessageEnvelope envelope);
 
@@ -155,7 +156,8 @@ abstract class MessageQueue
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [messageType]       a message type
   /// - [value]             an object value to be sent
-  /// Return          (optional) Future that receives error or null for success.
+  /// Return          (optional) Future that receives  null for success.
+  /// Throws error
   ///
   /// See [[send]]
   @override
@@ -169,6 +171,7 @@ abstract class MessageQueue
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// Return          Future that receives a message or error.
+  /// Throws errors
   @override
   Future<MessageEnvelope> peek(String correlationId);
 
@@ -177,7 +180,8 @@ abstract class MessageQueue
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [messageCount]      a maximum number of messages to peek.
-  /// Return          Future that receives a list with messages or error.
+  /// Return          Future that receives a list with messages 
+  /// Throws error.
   @override
   Future<List<MessageEnvelope>> peekBatch(
       String correlationId, int messageCount);
@@ -186,7 +190,8 @@ abstract class MessageQueue
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [waitTimeout]       a timeout in milliseconds to wait for a message to come.
-  /// Return          Future that receives a message or error.
+  /// Return          Future that receives a message
+  /// Throws error.
   @override
   Future<MessageEnvelope> receive(String correlationId, int waitTimeout);
 
@@ -195,7 +200,8 @@ abstract class MessageQueue
   ///
   /// - [message]       a message to extend its lock.
   /// - [lockTimeout]   a locking timeout in milliseconds.
-  /// Return      (optional) Future that receives an error or null for success.
+  /// Return      (optional) Future that receives an null for success.
+  /// Throws error
   @override
   Future renewLock(MessageEnvelope message, int lockTimeout);
 
@@ -203,7 +209,8 @@ abstract class MessageQueue
   /// This method is usually used to remove the message after successful processing.
   ///
   /// - [message]   a message to remove.
-  /// Return  (optional) Future that receives an error or null for success.
+  /// Return  (optional) Future that receives an  null for success.
+  /// Trows error
   @override
   Future complete(MessageEnvelope message);
 
@@ -213,14 +220,16 @@ abstract class MessageQueue
   /// or/and send to dead letter queue.
   ///
   /// - [message]   a message to return.
-  /// Return  (optional) Future that receives an error or null for success.
+  /// Return  (optional) Future that receives an null for success.
+  /// Throows error
   @override
   Future abandon(MessageEnvelope message);
 
   /// Permanently removes a message from the queue and sends it to dead letter queue.
   ///
   /// - [message]   a message to be removed.
-  /// Return  (optional) Future that receives an error or null for success.
+  /// Return  (optional) Future that receives an  null for success.
+  /// Throw errors
   @override
   Future moveToDeadLetter(MessageEnvelope message);
 
@@ -237,7 +246,7 @@ abstract class MessageQueue
   /// Ends listening for incoming messages.
   /// When this method is call [[listen]] unblocks the thread and execution continues.
   ///
-  /// - correlationId     (optional) transaction id to trace execution through call chain.
+  /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   @override
   void endListen(String correlationId);
 

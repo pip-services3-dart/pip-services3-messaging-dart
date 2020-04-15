@@ -8,7 +8,6 @@ import '../queues/MemoryMessageQueue.dart';
 ///
 /// See [Factory]
 /// See [MemoryMessageQueue]
-
 class MessageQueueFactory extends Factory {
   static final descriptor =
       Descriptor('pip-services', 'factory', 'message-queue', 'default', '1.0');
@@ -16,7 +15,6 @@ class MessageQueueFactory extends Factory {
       Descriptor('pip-services', 'message-queue', 'memory', '*', '1.0');
 
   /// Create a new instance of the factory.
-
   MessageQueueFactory() : super() {
     register(MessageQueueFactory.MemoryQueueDescriptor, (locator) {
       return MemoryMessageQueue(locator.getName());

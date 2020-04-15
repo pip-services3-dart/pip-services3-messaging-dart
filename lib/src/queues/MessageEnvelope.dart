@@ -1,13 +1,11 @@
 import 'dart:convert';
 import 'package:pip_services3_commons/pip_services3_commons.dart';
-//TODO: UTF-8 important?
 
 /// Allows adding additional information to messages. A correlation id, message id, and a message type
 /// are added to the data being sent/received. Additionally, a MessageEnvelope can reference a lock token.
 ///
-/// Side note: a MessageEnvelope's message is stored as a buffer, so strings are converted
+/// Side note: a MessageEnvelope's message is stored as string, so strings are converted
 /// using utf8 conversions.
-
 class MessageEnvelope {
   var _reference;
   // The unique business transaction id that is used to trace calls across components.
@@ -19,7 +17,7 @@ class MessageEnvelope {
   // The time at which the message was sent.
   DateTime sent_time;
   // The stored message.
-  var message;
+  String message;
 
   /// Creates a new MessageEnvelope, which adds a correlation id, message id, and a type to the
   /// data being sent/received.
@@ -48,7 +46,7 @@ class MessageEnvelope {
 
   /// Returns the information stored in this message as a UTF-8 encoded string.
   String getMessageAsString() {
-    return message != null ? message.toString('utf8') : null;
+    return message ?? '';
   }
 
   /// Stores the given string.
@@ -65,7 +63,7 @@ class MessageEnvelope {
   /// See [[setMessageAsJson]]
   dynamic getMessageAsJson() {
     if (message == null) return null;
-    var temp = message.toString();
+    var temp = message;
     return json.decode(temp);
   }
 
@@ -97,7 +95,9 @@ class MessageEnvelope {
     builder += ',';
     builder += message_type ?? '---';
     builder += ',';
-    builder += message != null ? message.toString('utf8', 0, 50) : '---';
+    builder += message != null
+        ? message.substring(0, message.length > 50 ? 50 : message.length)
+        : '---';
     builder += ']';
     return builder;
   }

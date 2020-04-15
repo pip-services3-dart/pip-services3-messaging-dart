@@ -1,4 +1,3 @@
-
 export './IMessageQueue.dart';
 export './IMessageReceiver.dart';
 export './MessageEnvelope.dart';

@@ -11,7 +11,7 @@ It contains asynchronous communication components:
 Quick Links:
 
 * [Downloads](https://github.com/pip-services3-dart/pip-services3-messaging-dart/blob/master/doc/Downloads.md)
-* [API Reference]((https://pub.dev/documentation/pip_services3_messaging/latest/pip_services3_messaging/pip_services3_messaging-library.html)
+* [API Reference](https://pub.dev/documentation/pip_services3_messaging/latest/pip_services3_messaging/pip_services3_messaging-library.html)
 * [Building and Testing](https://github.com/pip-services3-dart/pip-services3-messaging-dart/blob/master/doc/Development.md)
 * [Contributing](https://github.com/pip-services3-dart/pip-services3-messaging-dart/blob/master/doc/Development.md#contrib)
 

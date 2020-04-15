@@ -28,23 +28,26 @@ abstract class IMessageQueue implements IOpenable, IClosable {
 
   /// Reads the current number of messages in the queue to be delivered.
   ///
-  /// Return      Future that receives number of messages or error.
+  /// Return      Future that receives number of messages
+  /// Throws error.
   Future<int> readMessageCount();
 
   /// Sends a message into the queue.
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [envelope]          a message envelop to be sent.
-  /// Return          (optional) Future that receives error or null for success.
+  /// Return                Future that receives null for success.
+  /// Throws error
   Future send(String correlationId, MessageEnvelope envelope);
 
   /// Sends an object into the queue.
-  /// Before sending the object is converted into JSON string and wrapped in a [[MessageEnvelop]].
+  /// Before sending the object is converted into JSON string and wrapped in a [MessageEnvelop].
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [messageType]       a message type
   /// - [value]             an object value to be sent
-  /// Return          (optional) Future that receives error or null for success.
+  /// Return          (optional) Future that receives null for success.
+  /// Throws error
   ///
   /// See [[send]]
   Future sendAsObject(String correlationId, String messageType, value);
@@ -53,7 +56,8 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   /// If there are no messages available in the queue it returns null.
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
-  /// Return          Future that receives a message or error.
+  /// Return          Future that receives a message 
+  /// Throws error.
   Future<MessageEnvelope> peek(String correlationId);
 
   /// Peeks multiple incoming messages from the queue without removing them.
@@ -61,7 +65,8 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [messageCount]      a maximum number of messages to peek.
-  /// Return          Future that receives a list with messages or error.
+  /// Return                Future that receives a list with messages
+  /// Throws error.
   Future<List<MessageEnvelope>> peekBatch(
       String correlationId, int messageCount);
 
@@ -69,7 +74,8 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [waitTimeout]       a timeout in milliseconds to wait for a message to come.
-  /// Return          Future that receives a message or error.
+  /// Return                Future that receives a message
+  /// Throw error.
   Future<MessageEnvelope> receive(String correlationId, int waitTimeout);
 
   /// Renews a lock on a message that makes it invisible from other receivers in the queue.
@@ -77,14 +83,16 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   ///
   /// - [message]       a message to extend its lock.
   /// - [lockTimeout]   a locking timeout in milliseconds.
-  /// Return      (optional) Future that receives an error or null for success.
+  /// Return            Future that receives an null for success.
+  /// Throws error
   Future renewLock(MessageEnvelope message, int lockTimeout);
 
   /// Permanently removes a message from the queue.
   /// This method is usually used to remove the message after successful processing.
   ///
   /// - [message]   a message to remove.
-  /// Return  (optional) Future that receives an error or null for success.
+  /// Return        Future that receives null for success.
+  /// Throws error
   Future complete(MessageEnvelope message);
 
   /// Returnes message into the queue and makes it available for all subscribers to receive it again.
@@ -92,14 +100,16 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   /// to repeat the attempt. Messages that cause unrecoverable errors shall be removed permanently
   /// or/and send to dead letter queue.
   ///
-  /// - [message]   a message to return.
-  /// Return  (optional) Future that receives an error or null for success.
+  /// - [message]  a message to return.
+  /// Return       Future that receives null for success.
+  /// Throws error
   Future abandon(MessageEnvelope message);
 
   /// Permanently removes a message from the queue and sends it to dead letter queue.
   ///
   /// - [message]   a message to be removed.
-  /// Return  (optional) Future that receives an error or null for success.
+  /// Return        Future that receives null for success.
+  /// Throws error
   Future moveToDeadLetter(MessageEnvelope message);
 
   /// Listens for incoming messages and blocks the current thread until queue is closed.
@@ -107,8 +117,8 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [receiver]          a receiver to receive incoming messages.
   ///
-  /// See [[IMessageReceiver]]
-  /// See [[receive]]
+  /// See [IMessageReceiver]
+  /// See [receive] method
   void listen(String correlationId, IMessageReceiver receiver);
 
   /// Listens for incoming messages without blocking the current thread.
@@ -116,7 +126,7 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [receiver]          a receiver to receive incoming messages.
   ///
-  /// See [listen]
+  /// See [listen] method
   /// See [IMessageReceiver]
   void beginListen(String correlationId, IMessageReceiver receiver);
 
