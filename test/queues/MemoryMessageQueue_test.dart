@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:pip_services3_messaging/pip_service3_messaging.dart';
+import 'package:pip_services3_messaging/pip_services3_messaging.dart';
 import './MessageQueueFixture.dart';
 
 void main() {

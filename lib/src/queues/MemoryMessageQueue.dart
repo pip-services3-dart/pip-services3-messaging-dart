@@ -129,7 +129,7 @@ class MemoryMessageQueue extends MessageQueue {
   /// If there are no messages available in the queue it returns null.
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
-  /// Return          Future that receives a message 
+  /// Return          Future that receives a message
   /// Throws error.
   @override
   Future<MessageEnvelope> peek(String correlationId) async {
@@ -152,7 +152,7 @@ class MemoryMessageQueue extends MessageQueue {
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [messageCount]      a maximum number of messages to peek.
-  /// Return          Future that receives a list with messages 
+  /// Return          Future that receives a list with messages
   /// Throws error.
   @override
   Future<List<MessageEnvelope>> peekBatch(
@@ -167,7 +167,7 @@ class MemoryMessageQueue extends MessageQueue {
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [waitTimeout]       a timeout in milliseconds to wait for a message to come.
-  /// Return          Future that receives a message 
+  /// Return          Future that receives a message
   /// Throws error.
   @override
   Future<MessageEnvelope> receive(String correlationId, int waitTimeout) async {

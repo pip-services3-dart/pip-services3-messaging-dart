@@ -56,7 +56,7 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   /// If there are no messages available in the queue it returns null.
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
-  /// Return          Future that receives a message 
+  /// Return          Future that receives a message
   /// Throws error.
   Future<MessageEnvelope> peek(String correlationId);
 

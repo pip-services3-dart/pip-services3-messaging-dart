@@ -180,7 +180,7 @@ abstract class MessageQueue
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [messageCount]      a maximum number of messages to peek.
-  /// Return          Future that receives a list with messages 
+  /// Return          Future that receives a list with messages
   /// Throws error.
   @override
   Future<List<MessageEnvelope>> peekBatch(
