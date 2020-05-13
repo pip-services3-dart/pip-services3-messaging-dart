@@ -117,7 +117,7 @@ class MemoryMessageQueue extends MessageQueue {
   /// Throws error
   @override
   Future send(String correlationId, MessageEnvelope envelope) async {
-    envelope.sent_time = DateTime.now();
+    envelope.sent_time = DateTime.now().toUtc();
     // Add message to the queue
     _messages.add(envelope);
     counters.incrementOne('queue.' + getName() + '.sent_messages');
@@ -197,7 +197,7 @@ class MemoryMessageQueue extends MessageQueue {
 
             // Add messages to locked messages list
             var lockedMessage = LockedMessage();
-            var now = DateTime.now();
+            var now = DateTime.now().toUtc();
             lockedMessage.expirationTime =
                 now.add(Duration(milliseconds: waitTimeout));
             lockedMessage.message = message;
@@ -245,7 +245,7 @@ class MemoryMessageQueue extends MessageQueue {
 
     // If lock is found, extend the lock
     if (lockedMessage != null) {
-      var now = DateTime.now();
+      var now = DateTime.now().toUtc();
       // TODO: Shall we skip if the message already expired?
       if (lockedMessage.expirationTime.millisecondsSinceEpoch >
           now.millisecondsSinceEpoch) {
@@ -300,7 +300,7 @@ class MemoryMessageQueue extends MessageQueue {
 
       // Skip if it is already expired
       if (lockedMessage.expirationTime.millisecondsSinceEpoch <=
-          DateTime.now().millisecondsSinceEpoch) {
+          DateTime.now().toUtc().millisecondsSinceEpoch) {
         return null;
       }
     }
