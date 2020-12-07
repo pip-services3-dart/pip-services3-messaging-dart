@@ -6,7 +6,7 @@ import '../queues/MemoryMessageQueue.dart';
 /// Creates [MemoryMessageQueue] components by their descriptors.
 /// Name of created message queue is taken from its descriptor.
 ///
-/// See [Factory]
+/// See [Factory](https://pub.dev/documentation/pip_services3_components/latest/pip_services3_components/Factory-class.html)
 /// See [MemoryMessageQueue]
 class MessageQueueFactory extends Factory {
   static final descriptor =

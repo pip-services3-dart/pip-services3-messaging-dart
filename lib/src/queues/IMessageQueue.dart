@@ -12,7 +12,7 @@ import './IMessageReceiver.dart';
 /// Attempt to call non-supported method will result in NotImplemented exception.
 /// To verify if specific method is supported consult with [MessagingCapabilities].
 ///
-/// See [MessageEnvelop]
+/// See [MessageEnvelope]
 /// See [MessagingCapabilities]
 
 abstract class IMessageQueue implements IOpenable, IClosable {
@@ -41,7 +41,7 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   Future send(String correlationId, MessageEnvelope envelope);
 
   /// Sends an object into the queue.
-  /// Before sending the object is converted into JSON string and wrapped in a [MessageEnvelop].
+  /// Before sending the object is converted into JSON string and wrapped in a [MessageEnvelope].
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [messageType]       a message type
@@ -49,7 +49,7 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   /// Return          (optional) Future that receives null for success.
   /// Throws error
   ///
-  /// See [[send]]
+  /// See [send]
   Future sendAsObject(String correlationId, String messageType, value);
 
   /// Peeks a single incoming message from the queue without removing it.
@@ -131,7 +131,7 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   void beginListen(String correlationId, IMessageReceiver receiver);
 
   /// Ends listening for incoming messages.
-  /// When this method is call [[listen]] unblocks the thread and execution continues.
+  /// When this method is call [listen] unblocks the thread and execution continues.
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   void endListen(String correlationId);

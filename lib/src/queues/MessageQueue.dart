@@ -27,10 +27,10 @@ import './MessageEnvelope.dart';
 ///
 /// ### References ###
 ///
-/// - \*:logger:\*:\*:1.0           (optional) [ILogger] components to pass log messages
-/// - \*:counters:\*:\*:1.0         (optional) [ICounters] components to pass collected measurements
-/// - \*:discovery:\*:\*:1.0        (optional) [IDiscovery] components to discover connection(s)
-/// - \*:credential-store:\*:\*:1.0 (optional) [ICredentialStore] componetns to lookup credential(s)
+/// - \*:logger:\*:\*:1.0           (optional) [ILogger](https://pub.dev/documentation/pip_services3_components/latest/pip_services3_components/ILogger-class.html) components to pass log messages
+/// - \*:counters:\*:\*:1.0         (optional) [ICounters](https://pub.dev/documentation/pip_services3_components/latest/pip_services3_components/ICounters-class.html) components to pass collected measurements
+/// - \*:discovery:\*:\*:1.0        (optional) [IDiscovery](https://pub.dev/documentation/pip_services3_components/latest/pip_services3_components/IDiscovery-class.html) components to discover connection(s)
+/// - \*:credential-store:\*:\*:1.0 (optional) [ICredentialStore](https://pub.dev/documentation/pip_services3_components/latest/pip_services3_components/ICredentialStore-class.html) componetns to lookup credential(s)
 
 abstract class MessageQueue
     implements IMessageQueue, IReferenceable, IConfigurable {
@@ -151,7 +151,7 @@ abstract class MessageQueue
   Future send(String correlationId, MessageEnvelope envelope);
 
   /// Sends an object into the queue.
-  /// Before sending the object is converted into JSON string and wrapped in a [[MessageEnvelop]].
+  /// Before sending the object is converted into JSON string and wrapped in a [MessageEnvelope].
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [messageType]       a message type
@@ -159,7 +159,7 @@ abstract class MessageQueue
   /// Return          (optional) Future that receives  null for success.
   /// Throws error
   ///
-  /// See [[send]]
+  /// See [send]
   @override
   Future sendAsObject(String correlationId, String messageType, message) {
     var envelope = MessageEnvelope(correlationId, messageType, message);
@@ -238,13 +238,13 @@ abstract class MessageQueue
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [receiver]          a receiver to receive incoming messages.
   ///
-  /// See [[IMessageReceiver]]
-  /// See [[receive]]
+  /// See [IMessageReceiver]
+  /// See [receive]
   @override
   void listen(String correlationId, IMessageReceiver receiver);
 
   /// Ends listening for incoming messages.
-  /// When this method is call [[listen]] unblocks the thread and execution continues.
+  /// When this method is call [listen] unblocks the thread and execution continues.
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   @override
@@ -255,8 +255,8 @@ abstract class MessageQueue
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// - [receiver]          a receiver to receive incoming messages.
   ///
-  /// See [[listen]]
-  /// See [[IMessageReceiver]]
+  /// See [listen]
+  /// See [IMessageReceiver]
   @override
   void beginListen(String correlationId, IMessageReceiver receiver) {
     // setImmediate(() => {

@@ -60,7 +60,7 @@ class MessageEnvelope {
   /// Returns the value that was stored in this message
   ///          as a JSON string.
   ///
-  /// See [[setMessageAsJson]]
+  /// See [setMessageAsJson]
   dynamic getMessageAsJson() {
     if (message == null) return null;
     var temp = message;
@@ -72,7 +72,7 @@ class MessageEnvelope {
   /// - [value]     the value to convert to JSON and store in
   ///                  this message.
   ///
-  /// See [[getMessageAsJson]]
+  /// See [getMessageAsJson]
   void setMessageAsJson(Map<String, dynamic> value) {
     if (value == null) {
       message = null;

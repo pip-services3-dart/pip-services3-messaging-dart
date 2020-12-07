@@ -18,8 +18,8 @@ import './LockedMessage.dart';
 ///
 /// ### References ###
 ///
-/// - \*:logger:\*:\*:1.0           (optional) [ILogger] components to pass log messages
-/// - \*:counters:\*:\*:1.0         (optional) [ICounters] components to pass collected measurements
+/// - \*:logger:\*:\*:1.0           (optional) [ILogger](https://pub.dev/documentation/pip_services3_components/latest/pip_services3_components/ILogger-class.html) components to pass log messages
+/// - \*:counters:\*:\*:1.0         (optional) [ICounters](https://pub.dev/documentation/pip_services3_components/latest/pip_services3_components/ICounters-class.html) components to pass collected measurements
 ///
 /// See [MessageQueue]
 /// See [MessagingCapabilities]
@@ -377,7 +377,7 @@ class MemoryMessageQueue extends MessageQueue {
   }
 
   /// Ends listening for incoming messages.
-  /// When this method is call [[listen]] unblocks the thread and execution continues.
+  /// When this method is call [listen] unblocks the thread and execution continues.
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   @override
