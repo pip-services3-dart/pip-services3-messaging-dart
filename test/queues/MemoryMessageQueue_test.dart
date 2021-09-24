@@ -4,8 +4,8 @@ import './MessageQueueFixture.dart';
 
 void main() {
   group('MemoryMessageQueue', () {
-    MemoryMessageQueue queue;
-    MessageQueueFixture fixture;
+    late MemoryMessageQueue queue;
+    late MessageQueueFixture fixture;
 
     setUpAll(() async {
       queue = MemoryMessageQueue('TestQueue');
@@ -53,6 +53,10 @@ void main() {
 
     test('On Message', () async {
       await fixture.testOnMessage();
+    });
+
+    test('Send Message As Object', () async {
+      await fixture.testSendAsObject();
     });
   });
 }

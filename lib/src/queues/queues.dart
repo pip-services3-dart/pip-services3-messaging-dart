@@ -1,3 +1,5 @@
+export './CachedMessageQueue.dart';
+export './CallbackMessageReceiver.dart';
 export './IMessageQueue.dart';
 export './IMessageReceiver.dart';
 export './MessageEnvelope.dart';

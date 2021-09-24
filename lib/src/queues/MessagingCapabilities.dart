@@ -2,15 +2,15 @@
 /// If certain capability is not supported a queue will throw NotImplemented exception.
 
 class MessagingCapabilities {
-  bool _canMessageCount;
-  bool _canSend;
-  bool _canReceive;
-  bool _canPeek;
-  bool _canPeekBatch;
-  bool _canRenewLock;
-  bool _canAbandon;
-  bool _canDeadLetter;
-  bool _canClear;
+  bool _canMessageCount = false;
+  bool _canSend = false;
+  bool _canReceive = false;
+  bool _canPeek = false;
+  bool _canPeekBatch = false;
+  bool _canRenewLock = false;
+  bool _canAbandon = false;
+  bool _canDeadLetter = false;
+  bool _canClear = false;
 
   /// Creates a new instance of the capabilities object.
   ///

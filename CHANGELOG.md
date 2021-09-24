@@ -7,3 +7,9 @@
 ## 1.0.1
 
 - Fix work with time, convert all to UTC.
+
+## 1.1.0
+
+- Migrate to null-safety
+- Added **CachedMessageQueue**, **CallbackMessageReceiver**, **IMessageQueueFactory**, **MemoryMessageQueueFactory** classes
+- Added **connect** and **test** modules 

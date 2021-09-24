@@ -38,19 +38,20 @@ import './LockedMessage.dart';
 ///
 
 class MemoryMessageQueue extends MessageQueue {
-  var _messages = <MessageEnvelope>[];
+  var _messages = <MessageEnvelope?>[];
   int _lockTokenSequence = 0;
   var _lockedMessages = <int, LockedMessage>{};
   bool _opened = false;
   //Used to stop the listening process.
   bool _cancel = false;
+  int _listenInterval = 1000;
 
   /// Creates a new instance of the message queue.
   ///
   /// - [name]  (optional) a queue name.
   ///
   /// See [MessagingCapabilities]
-  MemoryMessageQueue([String name]) : super(name) {
+  MemoryMessageQueue([String? name]) : super(name) {
     capabilities = MessagingCapabilities(
         true, true, true, true, true, true, true, false, true);
   }
@@ -71,8 +72,8 @@ class MemoryMessageQueue extends MessageQueue {
   /// Return 			          Future that receives null no errors occured.
   /// Throws error
   @override
-  Future openWithParams(String correlationId, ConnectionParams connection,
-      CredentialParams credential) async {
+  Future openWithParams(String? correlationId, ConnectionParams? connection,
+      CredentialParams? credential) async {
     _opened = true;
   }
 
@@ -82,7 +83,7 @@ class MemoryMessageQueue extends MessageQueue {
   /// Return 			        Future that receives null no errors occured.
   /// Throws error
   @override
-  Future close(String correlationId) async {
+  Future close(String? correlationId) async {
     _opened = false;
     _cancel = true;
     logger.trace(correlationId, 'Closed queue %s', [this]);
@@ -94,10 +95,22 @@ class MemoryMessageQueue extends MessageQueue {
   /// Return 			        Future that receives null no errors occured.
   /// Throws error
   @override
-  Future clear(String correlationId) async {
+  Future clear(String? correlationId) async {
     _messages = <MessageEnvelope>[];
     _lockedMessages = <int, LockedMessage>{};
     _cancel = false;
+  }
+
+  /// Configures component by passing configuration parameters.
+  /// - [config] configuration parameters to be set.
+  @override
+  void configure(ConfigParams config) {
+    super.configure(config);
+
+    _listenInterval =
+        config.getAsIntegerWithDefault('listen_interval', _listenInterval);
+    _listenInterval = config.getAsIntegerWithDefault(
+        'options.listen_interval', _listenInterval);
   }
 
   /// Reads the current number of messages in the queue to be delivered.
@@ -116,7 +129,7 @@ class MemoryMessageQueue extends MessageQueue {
   /// Return          (optional) Future that receives null for success.
   /// Throws error
   @override
-  Future send(String correlationId, MessageEnvelope envelope) async {
+  Future send(String? correlationId, MessageEnvelope envelope) async {
     envelope.sent_time = DateTime.now().toUtc();
     // Add message to the queue
     _messages.add(envelope);
@@ -132,8 +145,8 @@ class MemoryMessageQueue extends MessageQueue {
   /// Return          Future that receives a message
   /// Throws error.
   @override
-  Future<MessageEnvelope> peek(String correlationId) async {
-    MessageEnvelope message;
+  Future<MessageEnvelope?> peek(String? correlationId) async {
+    MessageEnvelope? message;
     // Pick a message
     if (_messages.isNotEmpty) {
       message = _messages[0];
@@ -155,12 +168,12 @@ class MemoryMessageQueue extends MessageQueue {
   /// Return          Future that receives a list with messages
   /// Throws error.
   @override
-  Future<List<MessageEnvelope>> peekBatch(
-      String correlationId, int messageCount) async {
+  Future<List<MessageEnvelope?>> peekBatch(
+      String? correlationId, int messageCount) async {
     var messages = _messages.sublist(0, messageCount);
     logger.trace(correlationId, 'Peeked %d messages on %s',
         [messages.length, toString()]);
-    return messages;
+    return Future.value(messages);
   }
 
   /// Receives an incoming message and removes it from the queue.
@@ -170,14 +183,15 @@ class MemoryMessageQueue extends MessageQueue {
   /// Return          Future that receives a message
   /// Throws error.
   @override
-  Future<MessageEnvelope> receive(String correlationId, int waitTimeout) async {
+  Future<MessageEnvelope?> receive(
+      String? correlationId, int waitTimeout) async {
     var err;
-    MessageEnvelope message;
+    MessageEnvelope? message;
     var messageReceived = false;
 
     var checkIntervalMs = 100;
     var i = 0;
-
+    // TODO maybe need update this realization
     for (; i < waitTimeout && !messageReceived;) {
       i = i + checkIntervalMs;
 
@@ -193,7 +207,7 @@ class MemoryMessageQueue extends MessageQueue {
           if (message != null) {
             // Generate and set locked token
             var lockedToken = _lockTokenSequence++;
-            message.setReference(lockedToken);
+            message!.setReference(lockedToken);
 
             // Add messages to locked messages list
             var lockedMessage = LockedMessage();
@@ -203,11 +217,10 @@ class MemoryMessageQueue extends MessageQueue {
             lockedMessage.message = message;
             lockedMessage.timeout = waitTimeout;
             _lockedMessages[lockedToken] = lockedMessage;
-          }
 
-          if (message != null) {
+            // Instrument the process
             counters.incrementOne('queue.' + getName() + '.received_messages');
-            logger.debug(message.correlation_id, 'Received message %s via %s',
+            logger.debug(message!.correlation_id, 'Received message %s via %s',
                 [message, toString()]);
           }
         } catch (ex) {
@@ -247,10 +260,10 @@ class MemoryMessageQueue extends MessageQueue {
     if (lockedMessage != null) {
       var now = DateTime.now().toUtc();
       // TODO: Shall we skip if the message already expired?
-      if (lockedMessage.expirationTime.millisecondsSinceEpoch >
+      if (lockedMessage.expirationTime!.millisecondsSinceEpoch >
           now.millisecondsSinceEpoch) {
         lockedMessage.expirationTime =
-            now.add(Duration(milliseconds: lockedMessage.timeout));
+            now.add(Duration(milliseconds: lockedMessage.timeout!));
       }
     }
 
@@ -295,11 +308,11 @@ class MemoryMessageQueue extends MessageQueue {
     var lockedMessage = _lockedMessages[lockedToken];
     if (lockedMessage != null) {
       // Remove from locked messages
-      _lockedMessages..remove(lockedToken);
+      _lockedMessages.remove(lockedToken);
       message.setReference(null);
 
       // Skip if it is already expired
-      if (lockedMessage.expirationTime.millisecondsSinceEpoch <=
+      if (lockedMessage.expirationTime!.millisecondsSinceEpoch <=
           DateTime.now().toUtc().millisecondsSinceEpoch) {
         return null;
       }
@@ -343,27 +356,29 @@ class MemoryMessageQueue extends MessageQueue {
   /// See [IMessageReceiver]
   /// See [receive]
   @override
-  void listen(String correlationId, IMessageReceiver receiver) async {
+  void listen(String? correlationId, IMessageReceiver receiver) async {
     var timeoutInterval = 1000;
 
     logger.trace(null, 'Started listening messages at %s', [toString()]);
     _cancel = false;
     try {
       for (; !_cancel;) {
-        MessageEnvelope message;
+        MessageEnvelope? message;
 
         try {
           var result = await receive(correlationId, timeoutInterval);
           message = result;
         } catch (err) {
-          logger.error(correlationId, err, 'Failed to receive the message');
+          logger.error(
+              correlationId, err as Exception, 'Failed to receive the message');
         }
 
         if (message != null && !_cancel) {
           try {
             await receiver.receiveMessage(message, this);
           } catch (err) {
-            logger.error(correlationId, err, 'Failed to process the message');
+            logger.error(correlationId, err as Exception,
+                'Failed to process the message');
           }
         }
 
@@ -381,7 +396,7 @@ class MemoryMessageQueue extends MessageQueue {
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   @override
-  void endListen(String correlationId) {
+  void endListen(String? correlationId) {
     _cancel = true;
   }
 }

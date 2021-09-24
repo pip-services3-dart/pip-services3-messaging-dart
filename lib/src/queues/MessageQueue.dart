@@ -40,13 +40,16 @@ abstract class MessageQueue
   var credentialResolver = CredentialResolver();
 
   String name = '';
-  MessagingCapabilities capabilities;
+  MessagingCapabilities capabilities = MessagingCapabilities(
+      false, false, false, false, false, false, false, false, false);
 
   /// Creates a new instance of the message queue.
   ///
   /// - [name]  (optional) a queue name
-  MessageQueue([String name]) {
-    name = name;
+  /// - [capabilities] (optional) a capabilities of this message queue
+  MessageQueue([String? name, MessagingCapabilities? capabilities]) {
+    this.name = name ?? this.name;
+    this.capabilities = capabilities ?? this.capabilities;
   }
 
   /// Gets the queue name
@@ -61,16 +64,14 @@ abstract class MessageQueue
   ///
   /// Returns the queue's capabilities object.
   @override
-  MessagingCapabilities getCapabilities() {
-    return capabilities;
-  }
+  MessagingCapabilities getCapabilities() => capabilities;
 
   /// Configures component by passing configuration parameters.
   ///
   /// - [config]    configuration parameters to be set.
   @override
   void configure(ConfigParams config) {
-    name = NameResolver.resolve(config, name);
+    name = NameResolver.resolve(config, name) ?? name;
     logger.configure(config);
     connectionResolver.configure(config);
     credentialResolver.configure(config);
@@ -99,12 +100,9 @@ abstract class MessageQueue
   /// Return 			Future that receives null no errors occured.
   /// Trows error
   @override
-  Future open(String correlationId) async {
-    ConnectionParams connection;
-    CredentialParams credential;
-
-    connection = await connectionResolver.resolve(correlationId);
-    credential = await credentialResolver.lookup(correlationId);
+  Future open(String? correlationId) async {
+    var connection = await connectionResolver.resolve(correlationId);
+    var credential = await credentialResolver.lookup(correlationId);
 
     return openWithParams(correlationId, connection, credential);
   }
@@ -116,8 +114,17 @@ abstract class MessageQueue
   /// - [credential]        credential parameters
   /// Return 			Future that receives null no errors occured.
   /// Trows error
-  Future openWithParams(String correlationId, ConnectionParams connection,
-      CredentialParams credential);
+  Future openWithParams(String? correlationId, ConnectionParams? connection,
+      CredentialParams? credential);
+
+  /// Checks if the queue has been opened and throws an exception is it's not.
+  /// - [correlationId] (optional) transaction id to trace execution through call chain.
+  void checkOpen(String? correlationId) {
+    if (!isOpen()) {
+      throw InvalidStateException(
+          correlationId, 'NOT_OPENED', 'The queue is not opened');
+    }
+  }
 
   /// Closes component and frees used resources.
   ///
@@ -125,14 +132,14 @@ abstract class MessageQueue
   /// Return 			      Future that receives  null no errors occured.
   /// Throws error
   @override
-  Future close(String correlationId);
+  Future close(String? correlationId);
 
   /// Clears component state.
   ///
   /// - [correlationId] 	(optional) transaction id to trace execution through call chain.
   /// Return 			Future that receives  null no errors occured.
   /// Throws error
-  Future clear(String correlationId);
+  Future clear(String? correlationId);
 
   /// Reads the current number of messages in the queue to be delivered.
   ///
@@ -148,7 +155,7 @@ abstract class MessageQueue
   /// Return          (optional) Future that receives  null for success.
   /// Throws error
   @override
-  Future send(String correlationId, MessageEnvelope envelope);
+  Future send(String? correlationId, MessageEnvelope envelope);
 
   /// Sends an object into the queue.
   /// Before sending the object is converted into JSON string and wrapped in a [MessageEnvelope].
@@ -161,7 +168,7 @@ abstract class MessageQueue
   ///
   /// See [send]
   @override
-  Future sendAsObject(String correlationId, String messageType, message) {
+  Future sendAsObject(String? correlationId, String messageType, message) {
     var envelope = MessageEnvelope(correlationId, messageType, message);
     return send(correlationId, envelope);
   }
@@ -173,7 +180,7 @@ abstract class MessageQueue
   /// Return          Future that receives a message or error.
   /// Throws errors
   @override
-  Future<MessageEnvelope> peek(String correlationId);
+  Future<MessageEnvelope?> peek(String? correlationId);
 
   /// Peeks multiple incoming messages from the queue without removing them.
   /// If there are no messages available in the queue it returns an empty list.
@@ -183,8 +190,8 @@ abstract class MessageQueue
   /// Return          Future that receives a list with messages
   /// Throws error.
   @override
-  Future<List<MessageEnvelope>> peekBatch(
-      String correlationId, int messageCount);
+  Future<List<MessageEnvelope?>> peekBatch(
+      String? correlationId, int messageCount);
 
   /// Receives an incoming message and removes it from the queue.
   ///
@@ -193,7 +200,7 @@ abstract class MessageQueue
   /// Return          Future that receives a message
   /// Throws error.
   @override
-  Future<MessageEnvelope> receive(String correlationId, int waitTimeout);
+  Future<MessageEnvelope?> receive(String? correlationId, int waitTimeout);
 
   /// Renews a lock on a message that makes it invisible from other receivers in the queue.
   /// This method is usually used to extend the message processing time.
@@ -241,14 +248,14 @@ abstract class MessageQueue
   /// See [IMessageReceiver]
   /// See [receive]
   @override
-  void listen(String correlationId, IMessageReceiver receiver);
+  void listen(String? correlationId, IMessageReceiver receiver);
 
   /// Ends listening for incoming messages.
   /// When this method is call [listen] unblocks the thread and execution continues.
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   @override
-  void endListen(String correlationId);
+  void endListen(String? correlationId);
 
   /// Listens for incoming messages without blocking the current thread.
   ///
@@ -258,7 +265,7 @@ abstract class MessageQueue
   /// See [listen]
   /// See [IMessageReceiver]
   @override
-  void beginListen(String correlationId, IMessageReceiver receiver) {
+  void beginListen(String? correlationId, IMessageReceiver receiver) {
     // setImmediate(() => {
     Future.delayed(Duration(milliseconds: 0), () {
       listen(correlationId, receiver);

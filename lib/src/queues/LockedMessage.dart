@@ -6,12 +6,12 @@ import './MessageEnvelope.dart';
 /// See [MemoryMessageQueue]
 class LockedMessage {
   /// The incoming message.
-  MessageEnvelope message;
+  MessageEnvelope? message;
 
   /// The expiration time for the message lock.
   /// If it is null then the message is not locked.
-  DateTime expirationTime;
+  DateTime? expirationTime;
 
   /// The lock timeout in milliseconds.
-  int timeout;
+  int? timeout;
 }

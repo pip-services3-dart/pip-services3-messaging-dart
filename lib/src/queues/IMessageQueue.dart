@@ -38,7 +38,7 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   /// - [envelope]          a message envelop to be sent.
   /// Return                Future that receives null for success.
   /// Throws error
-  Future send(String correlationId, MessageEnvelope envelope);
+  Future send(String? correlationId, MessageEnvelope envelope);
 
   /// Sends an object into the queue.
   /// Before sending the object is converted into JSON string and wrapped in a [MessageEnvelope].
@@ -50,7 +50,7 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   /// Throws error
   ///
   /// See [send]
-  Future sendAsObject(String correlationId, String messageType, value);
+  Future sendAsObject(String? correlationId, String messageType, value);
 
   /// Peeks a single incoming message from the queue without removing it.
   /// If there are no messages available in the queue it returns null.
@@ -58,7 +58,7 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
   /// Return          Future that receives a message
   /// Throws error.
-  Future<MessageEnvelope> peek(String correlationId);
+  Future<MessageEnvelope?> peek(String? correlationId);
 
   /// Peeks multiple incoming messages from the queue without removing them.
   /// If there are no messages available in the queue it returns an empty list.
@@ -67,8 +67,8 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   /// - [messageCount]      a maximum number of messages to peek.
   /// Return                Future that receives a list with messages
   /// Throws error.
-  Future<List<MessageEnvelope>> peekBatch(
-      String correlationId, int messageCount);
+  Future<List<MessageEnvelope?>> peekBatch(
+      String? correlationId, int messageCount);
 
   /// Receives an incoming message and removes it from the queue.
   ///
@@ -76,7 +76,7 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   /// - [waitTimeout]       a timeout in milliseconds to wait for a message to come.
   /// Return                Future that receives a message
   /// Throw error.
-  Future<MessageEnvelope> receive(String correlationId, int waitTimeout);
+  Future<MessageEnvelope?> receive(String? correlationId, int waitTimeout);
 
   /// Renews a lock on a message that makes it invisible from other receivers in the queue.
   /// This method is usually used to extend the message processing time.
@@ -119,7 +119,7 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   ///
   /// See [IMessageReceiver]
   /// See [receive] method
-  void listen(String correlationId, IMessageReceiver receiver);
+  void listen(String? correlationId, IMessageReceiver receiver);
 
   /// Listens for incoming messages without blocking the current thread.
   ///
@@ -128,11 +128,11 @@ abstract class IMessageQueue implements IOpenable, IClosable {
   ///
   /// See [listen] method
   /// See [IMessageReceiver]
-  void beginListen(String correlationId, IMessageReceiver receiver);
+  void beginListen(String? correlationId, IMessageReceiver receiver);
 
   /// Ends listening for incoming messages.
   /// When this method is call [listen] unblocks the thread and execution continues.
   ///
   /// - [correlationId]     (optional) transaction id to trace execution through call chain.
-  void endListen(String correlationId);
+  void endListen(String? correlationId);
 }
