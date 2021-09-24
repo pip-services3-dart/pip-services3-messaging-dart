@@ -191,7 +191,6 @@ class MemoryMessageQueue extends MessageQueue {
 
     var checkIntervalMs = 100;
     var i = 0;
-    // TODO maybe need update this realization
     for (; i < waitTimeout && !messageReceived;) {
       i = i + checkIntervalMs;
 
